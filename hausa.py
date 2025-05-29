@@ -82,7 +82,7 @@ def main():
             mode=WebRtcMode.SENDONLY,
             audio_receiver_size=1024,
             rtc_configuration=rtc_config,
-            media_stream_constraints={"audio": True, "video": False},
+            media_stream_constraints={"audio": True, "video": True},
             audio_frame_callback=st.session_state.audio_recorder.audio_frame_callback,
         )
 
