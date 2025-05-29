@@ -1,0 +1,8 @@
+streamlit
+torch
+transformers
+librosa
+numpy
+pydub
+soundfile
+streamlit-webrtc
