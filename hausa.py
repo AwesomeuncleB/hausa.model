@@ -420,5 +420,6 @@ def main():
         st.divider()
         st.info("**Model:** Whisper fine-tuned for Hausa\n**Source:** therealbee/whisper-small-ha-bible-tts")
 
+
 if __name__ == "__main__":
     main()
