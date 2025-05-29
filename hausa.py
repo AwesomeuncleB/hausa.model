@@ -80,15 +80,27 @@ class AudioRecorder:
         with self.lock:
             self.is_recording = False
             if self.audio_frames:
-                # Concatenate all frames
                 try:
+                    # Concatenate all frames
                     audio_data = np.concatenate(self.audio_frames, axis=0)
+                    
                     # Convert to mono if stereo
                     if audio_data.ndim > 1:
                         audio_data = audio_data.mean(axis=1)
-                    return audio_data.astype(np.float32)
+                    
+                    # Ensure we have actual audio data
+                    if len(audio_data) < 100:  # Less than 100 samples is likely empty
+                        return None
+                    
+                    # Convert to float32 and normalize
+                    audio_data = audio_data.astype(np.float32)
+                    
+                    # Remove DC offset
+                    audio_data = audio_data - np.mean(audio_data)
+                    
+                    return audio_data
                 except Exception as e:
-                    st.error(f"Error processing audio: {e}")
+                    st.error(f"Error processing audio frames: {e}")
                     return None
             return None
 
@@ -144,11 +156,22 @@ def main():
             if st.button("⏹️ Stop Recording", disabled=not webrtc_ctx.state.playing):
                 audio_data = st.session_state.audio_recorder.stop_recording()
                 if audio_data is not None and len(audio_data) > 0:
-                    # Save audio to temporary file
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-                        sf.write(tmp_file.name, audio_data, 16000)
-                        st.session_state.recorded_audio_path = tmp_file.name
-                        st.success("✅ Recording saved!")
+                    try:
+                        # Ensure audio data is in correct format
+                        audio_data = np.array(audio_data, dtype=np.float32)
+                        
+                        # Normalize audio if needed
+                        if np.max(np.abs(audio_data)) > 1.0:
+                            audio_data = audio_data / np.max(np.abs(audio_data))
+                        
+                        # Save audio to temporary file
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                            sf.write(tmp_file.name, audio_data, 16000, format='WAV', subtype='PCM_16')
+                            st.session_state.recorded_audio_path = tmp_file.name
+                            st.success("✅ Recording saved!")
+                    except Exception as e:
+                        st.error(f"❌ Error saving audio: {str(e)}")
+                        st.warning("⚠️ Try using the file upload option instead.")
                 else:
                     st.warning("⚠️ No audio data captured. Please try again.")
 
